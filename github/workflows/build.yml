@@ -1,0 +1,43 @@
+name: Build Kernel
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install deps
+        run: sudo apt-get update && sudo apt-get install -y bc bison flex libssl-dev libelf-dev cpio
+
+      - name: Get clang toolchain
+        run: git clone --depth=1 https://github.com/kdrag0n/proton-clang clang
+
+      - name: Add KernelSU-Next (legacy, for old kernels)
+        run: curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -s legacy
+
+      - name: Patch defconfig with the allowlist fix
+        run: |
+          DEFCONFIG=$(ls arch/arm64/configs | grep -i tulip | head -1)
+          echo "Using defconfig: $DEFCONFIG"
+          echo "CONFIG_KSU_ALLOWLIST_WORKAROUND=y" >> arch/arm64/configs/$DEFCONFIG
+          echo "DEFCONFIG=$DEFCONFIG" >> $GITHUB_ENV
+
+      - name: Build
+        run: |
+          export PATH="$PWD/clang/bin:$PATH"
+          make O=out ARCH=arm64 $DEFCONFIG
+          make -j$(nproc) O=out ARCH=arm64 CC=clang CROSS_COMPILE=aarch64-linux-gnu- 2>&1 | tee build.log
+
+      - name: Upload result
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: kernel-output
+          path: |
+            out/arch/arm64/boot/Image.gz-dtb
+            out/arch/arm64/boot/Image
+            build.log
+          if-no-files-found: warn
