@@ -19,16 +19,12 @@ jobs:
         run: curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -s legacy
 
       - name: Patch defconfig with the allowlist fix
-        run: |
-          DEFCONFIG=$(ls arch/arm64/configs | grep -i tulip | head -1)
-          echo "Using defconfig: $DEFCONFIG"
-          echo "CONFIG_KSU_ALLOWLIST_WORKAROUND=y" >> arch/arm64/configs/$DEFCONFIG
-          echo "DEFCONFIG=$DEFCONFIG" >> $GITHUB_ENV
+        run: echo "CONFIG_KSU_ALLOWLIST_WORKAROUND=y" >> arch/arm64/configs/vendor/tulip-perf_defconfig
 
       - name: Build
         run: |
           export PATH="$PWD/clang/bin:$PATH"
-          make O=out ARCH=arm64 $DEFCONFIG
+          make O=out ARCH=arm64 vendor/tulip-perf_defconfig
           make -j$(nproc) O=out ARCH=arm64 CC=clang CROSS_COMPILE=aarch64-linux-gnu- 2>&1 | tee build.log
 
       - name: Upload result
