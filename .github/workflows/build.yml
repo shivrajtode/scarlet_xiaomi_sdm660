@@ -15,7 +15,7 @@ jobs:
       - name: Get clang toolchain
         run: |
           git clone --depth=1 https://github.com/kdrag0n/proton-clang clang
-          rm -f clang/bin/*ld*
+          rm -f clang/bin/ld
 
       - name: Add KernelSU-Next (legacy, for old kernels)
         run: curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -s legacy
@@ -27,7 +27,7 @@ jobs:
         run: |
           export PATH="$PWD/clang/bin:$PATH"
           make O=out ARCH=arm64 vendor/tulip-perf_defconfig
-          set -o pipefail && make -j$(nproc) O=out ARCH=arm64 CC=clang CROSS_COMPILE=aarch64-linux-gnu- 2>&1 | tee build.log
+          set -o pipefail && make -j$(nproc) O=out ARCH=arm64 CC=clang LD=ld.lld CROSS_COMPILE=aarch64-linux-gnu- 2>&1 | tee build.log
 
       - name: Upload result
         if: always()
