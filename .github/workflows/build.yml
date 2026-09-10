@@ -27,7 +27,7 @@ jobs:
         run: |
           export PATH="$PWD/clang/bin:$PATH"
           make O=out ARCH=arm64 vendor/tulip-perf_defconfig
-          make -j$(nproc) O=out ARCH=arm64 CC=clang CROSS_COMPILE=aarch64-linux-gnu- 2>&1 | tee build.log
+          set -o pipefail && make -j$(nproc) O=out ARCH=arm64 CC=clang CROSS_COMPILE=aarch64-linux-gnu- 2>&1 | tee build.log
 
       - name: Upload result
         if: always()
